@@ -1,0 +1,15 @@
+{
+  "name": "4:6 Coffee Timer",
+  "short_name": "CoffeeTimer",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#2c3e50",
+  "theme_color": "#4ca1af",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

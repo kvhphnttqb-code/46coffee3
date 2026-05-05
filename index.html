@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coffee Lab Pro - Log Edition Fixed</title>
+  <style>
+    :root {
+      --primary: #ffd166;
+      --secondary: #06d6a0;
+      --danger: #ef476f;
+      --bg: #121820;
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --input-bg: rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(145deg, #121820, #232d39);
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: white;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 30px;
+      border-radius: 32px;
+      width: 380px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ヘッダー周り */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 4px;
+      opacity: 0.5;
+      font-weight: 400;
+    }
+
+    .btn-icon {
+      background: var(--input-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .btn-icon:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* メソッドグリッド */
+    .method-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .method-option {
+      background: var(--input-bg);
+      border: 2px solid transparent;
+      border-radius: 20px;
+      padding: 15px;
+      cursor: pointer;
+      position: relative;
+      transition: 0.3s;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 80px;
+    }
+
+    .method-option.active {
+      border-color: var(--primary);
+      background: rgba(255, 209, 102, 0.1);
+    }
+
+    .method-option.add-new {
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      background: none;
+      opacity: 0.6;
+    }
+
+    .edit-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 14px;
+      opacity: 0.4;
+    }
+
+    /* スライダーと目盛 */
+    .setting-group {
+      margin-bottom: 25px;
+    }
+
+    .slider-container {
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .slider-ticks {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 5px;
+      margin-top: 8px;
+      font-size: 10px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* タイマー・ステータス */
+    #time {
+      font-size: 72px;
+      text-align: center;
+      margin: 10px 0;
+      font-weight: 200;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #step-text {
+      text-align: center;
+      color: var(--primary);
+      font-size: 18px;
+      font-weight: 600;
+      min-height: 1.5em;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      background: var(--input-bg);
+      padding: 18px;
+      border-radius: 24px;
+      margin-top: 15px;
+    }
+
+    .status-bar div strong {
+      font-size: 22px;
+      color: var(--secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .memo-display {
+      margin-top: 15px;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      border-left: 3px solid var(--primary);
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.7);
+      min-height: 40px;
+      font-style: italic;
+      white-space: pre-wrap;
+    }
+
+    button#startBtn {
+      width: 100%;
+      padding: 20px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 50px;
+      background: var(--primary);
+      color: #121820;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* フルスクリーンオーバーレイ共通 */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #161d27;
+      z-index: 100;
+      padding: 25px;
+      box-sizing: border-box;
+      display: none;
+      overflow-y: auto;
+      border-radius: 32px;
+    }
+
+    /* ログ入力モーダル専用 */
+    .stars {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+      font-size: 32px;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.2);
+    }
+
+    .stars span.active {
+      color: var(--primary);
+    }
+
+    /* ログ一覧専用 */
+    .log-item {
+      background: var(--input-bg);
+      padding: 15px;
+      border-radius: 16px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      opacity: 0.6;
+      margin-bottom: 8px;
+    }
+
+    .log-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: var(--primary);
+    }
+
+    /* 修正箇所: メモの改行を保持する設定を追加 */
+    .log-recipe-memo {
+      font-size: 11px;
+      opacity: 0.5;
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+    }
+
+    .log-memo {
+      font-size: 12px;
+      opacity: 0.8;
+      line-height: 1.5;
+      margin-top: 8px;
+      white-space: pre-wrap;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    textarea.input-area {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+      margin-bottom: 20px;
+    }
+
+    .btn-save {
+      background: var(--secondary);
+      color: #121820;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 10px;
+      opacity: 0.5;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    /* エディター専用 */
+    .edit-card {
+      background: var(--input-bg);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+
+    .edit-card-row {
+      display: grid;
+      grid-template-columns: 60px 1fr 40px;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <div class="header-row">
+      <h1>BREW LAB</h1>
+      <button class="btn-icon" onclick="openHistory()">📖 LOGS</button>
+    </div>
+
+    <div id="method-grid" class="method-grid"></div>
+
+    <div class="setting-group">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; opacity: 0.7;">
+        <span>COFFEE BEANS</span><strong id="beanVal" style="color:var(--primary)">20g</strong>
+      </div>
+      <div class="slider-container">
+        <input type="range" id="beans" min="10" max="40" step="1" value="20" oninput="updateBeanVal(this.value)">
+        <div class="slider-ticks">
+          <span>10g</span><span>15g</span><span>20g</span><span>25g</span><span>30g</span><span>35g</span><span>40g</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="time">00:00</div>
+    <div id="step-text">Ready to Brew</div>
+
+    <div class="status-bar">
+      <div><span style="display:block; font-size:10px; opacity:0.5;">POUR</span><strong
+          id="currentPour">0</strong><small>ml</small></div>
+      <div><span style="display:block; font-size:10px; opacity:0.5;">TOTAL</span><strong
+          id="totalPour">0</strong><small>ml</small></div>
+    </div>
+
+    <div id="memo-display" class="memo-display"></div>
+
+    <button id="startBtn" onclick="startBrewing()">START BREW</button>
+
+    <!-- レシピエディター -->
+    <div id="editor-overlay" class="overlay">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 18px; margin: 0;">Edit Recipe</h2>
+        <button style="background:none; border:none; color:white; font-size:24px; cursor:pointer;"
+          onclick="closeOverlays()">×</button>
+      </div>
+      <div class="setting-group"><label class="input-label">Name</label><input type="text" id="edit-recipe-name"
+          class="input-area" style="margin-bottom:0;"></div>
+      <div class="setting-group"><label class="input-label">Setup Memo (挽き目など)</label><textarea id="edit-recipe-memo"
+          class="input-area" rows="2"></textarea></div>
+      <div id="edit-steps-container"></div>
+      <button
+        style="background:rgba(255,255,255,0.1); color:white; width:100%; padding:12px; border-radius:12px; border:none; cursor:pointer; margin-bottom:10px;"
+        onclick="addStepRow()">+ Add Step</button>
+      <button class="btn-save" onclick="saveRecipe()">SAVE RECIPE</button>
+    </div>
+
+    <!-- 抽出完了時のログ入力画面 -->
+    <div id="log-entry-overlay" class="overlay">
+      <h2 style="text-align: center; color: var(--primary); margin-top: 10px;">Brew Complete!</h2>
+      <p style="text-align: center; font-size: 12px; opacity: 0.7;">今回のコーヒーの味はどうでしたか？</p>
+
+      <div class="stars" id="star-rating">
+        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span
+          onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+      </div>
+
+      <div class="setting-group">
+        <label class="input-label">Tasting Notes (感想や改善点)</label>
+        <textarea id="log-notes" class="input-area" rows="4" placeholder="少し酸味が強かった。次回は挽き目を細かくする。"></textarea>
+      </div>
+
+      <button class="btn-save" onclick="saveLog()">SAVE LOG</button>
+      <button
+        style="background:none; color:white; width:100%; padding:15px; border:none; margin-top:10px; opacity:0.5; cursor:pointer;"
+        onclick="closeOverlays()">Skip</button>
+    </div>
+
+    <!-- ログ履歴画面 -->
+    <div id="history-overlay" class="overlay">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 18px; margin: 0;">Brew History</h2>
+        <button style="background:none; border:none; color:white; font-size:24px; cursor:pointer;"
+          onclick="closeOverlays()">×</button>
+      </div>
+      <div id="history-list-container">
+        <!-- 履歴がここに入る -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // === データ管理 ===
+    const defaultRecipes = {
+      'v60': { name: 'V60 Std.', icon: '☕', memo: '基本の淹れ方。90度。', steps: [{ t: 0, txt: 'Bloom', r: 0.2 }, { t: 40, txt: 'Main', r: 0.4 }, { t: 90, txt: 'Final', r: 0.4 }, { t: 150, txt: 'Finish', r: 0 }] },
+      '46method': { name: '4:6 Method', icon: '⚖️', memo: '粗挽き。', steps: [{ t: 0, txt: '1st', r: 0.2 }, { t: 45, txt: '2nd', r: 0.2 }, { t: 90, txt: '3rd', r: 0.2 }, { t: 135, txt: '4th', r: 0.2 }, { t: 180, txt: '5th', r: 0.2 }, { t: 230, txt: 'Finish', r: 0 }] }
+    };
+    let recipes = JSON.parse(localStorage.getItem('customRecipesV6')) || defaultRecipes;
+    let brewLogs = JSON.parse(localStorage.getItem('coffeeLogsV2')) || [];
+
+    let currentMethodKey = Object.keys(recipes)[0];
+    let editingKey = '';
+    let currentRating = 0;
+    let timer, audioCtx;
+
+    function init() {
+      const grid = document.getElementById('method-grid');
+      grid.innerHTML = '';
+      Object.keys(recipes).forEach(key => {
+        const active = key === currentMethodKey ? 'active' : '';
+        grid.innerHTML += `
+          <div class="method-option ${active}" id="btn-${key}" onclick="selectMethod('${key}')">
+            <span class="edit-icon" onclick="openEditor(event, '${key}')">✎</span>
+            <div style="font-size:24px; margin-bottom:5px;">${recipes[key].icon || '☕'}</div>
+            <div style="font-size:10px; font-weight:800; text-transform:uppercase;">${recipes[key].name}</div>
+          </div>
+        `;
+      });
+      grid.innerHTML += `<div class="method-option add-new" onclick="addNewRecipe()"><div style="font-size:24px">+</div><div style="font-size:10px; font-weight:bold;">NEW</div></div>`;
+      updateDisplays();
+    }
+
+    function selectMethod(key) {
+      currentMethodKey = key;
+      document.querySelectorAll('.method-option').forEach(el => el.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-${key}`);
+      if (activeBtn) activeBtn.classList.add('active');
+      updateDisplays();
+    }
+
+    function updateDisplays() {
+      document.getElementById('memo-display').innerText = recipes[currentMethodKey]?.memo || 'メモなし';
+    }
+
+    function updateBeanVal(val) { document.getElementById('beanVal').innerText = val + 'g'; }
+
+    function closeOverlays() { document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); }
+
+    // === エディター関連 ===
+    function openEditor(e, key) {
+      e.stopPropagation(); editingKey = key;
+      const recipe = recipes[key];
+      document.getElementById('edit-recipe-name').value = recipe.name;
+      document.getElementById('edit-recipe-memo').value = recipe.memo || '';
+      const container = document.getElementById('edit-steps-container');
+      container.innerHTML = '';
+      recipe.steps.forEach(step => addStepRow(step.t, step.txt, step.r));
+      document.getElementById('editor-overlay').style.display = 'block';
+    }
+
+    function addStepRow(t = 0, txt = 'Step', r = 0) {
+      const div = document.createElement('div');
+      div.className = 'edit-card';
+      div.innerHTML = `
+        <div class="edit-card-row">
+          <div><label class="input-label">Sec</label><input type="number" class="step-t" value="${t}"></div>
+          <div><label class="input-label">Label</label><input type="text" class="step-txt" value="${txt}"></div>
+          <button style="background:none; border:none; color:white; font-size:20px; cursor:pointer; margin-top:10px;" onclick="this.closest('.edit-card').remove();">×</button>
+        </div>
+        <div style="width:100px;"><label class="input-label">Ratio</label><input type="number" step="0.01" class="step-r" value="${r}"></div>
+      `;
+      document.getElementById('edit-steps-container').appendChild(div);
+    }
+
+    function saveRecipe() {
+      recipes[editingKey].name = document.getElementById('edit-recipe-name').value;
+      recipes[editingKey].memo = document.getElementById('edit-recipe-memo').value;
+      recipes[editingKey].steps = Array.from(document.querySelectorAll('.edit-card')).map(row => ({
+        t: parseInt(row.querySelector('.step-t').value) || 0,
+        txt: row.querySelector('.step-txt').value,
+        r: parseFloat(row.querySelector('.step-r').value) || 0
+      }));
+      localStorage.setItem('customRecipesV6', JSON.stringify(recipes));
+      closeOverlays(); init();
+    }
+
+    function addNewRecipe() {
+      const id = 'recipe_' + Date.now();
+      recipes[id] = { name: 'New Recipe', icon: '☕', memo: '', steps: [{ t: 0, txt: 'Bloom', r: 0.2 }, { t: 45, txt: 'Pour', r: 0.8 }] };
+      init(); selectMethod(id); openEditor(null, id);
+    }
+
+    // === タイマー処理 ===
+    function startBrewing() {
+      const beans = document.getElementById('beans').value;
+      const totalWater = beans * 15;
+      const steps = recipes[currentMethodKey].steps;
+      const btn = document.getElementById('startBtn');
+      btn.disabled = true; btn.style.opacity = "0.5";
+
+      let index = -1; let totalPoured = 0; const startTime = Date.now();
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      clearInterval(timer);
+      timer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('time').innerText = String(Math.floor(elapsed / 60)).padStart(2, '0') + ":" + String(elapsed % 60).padStart(2, '0');
+
+        if (index < steps.length - 1 && elapsed >= steps[index + 1].t) {
+          index++; const s = steps[index];
+          totalPoured += Math.round(totalWater * s.r);
+          document.getElementById('step-text').innerText = s.txt;
+          document.getElementById('currentPour').innerText = Math.round(totalWater * s.r);
+          document.getElementById('totalPour').innerText = totalPoured;
+
+          const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+          osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+
+          if (index === steps.length - 1) {
+            clearInterval(timer);
+            btn.disabled = false; btn.style.opacity = "1";
+            setTimeout(() => { openLogEntry(); }, 1500);
+          }
+        }
+      }, 200);
+    }
+
+    // === ログ機能関連 ===
+    function openLogEntry() {
+      closeOverlays();
+      setRating(0);
+      document.getElementById('log-notes').value = '';
+      document.getElementById('log-entry-overlay').style.display = 'block';
+    }
+
+    function setRating(num) {
+      currentRating = num;
+      const stars = document.getElementById('star-rating').children;
+      for (let i = 0; i < stars.length; i++) {
+        stars[i].className = i < num ? 'active' : '';
+      }
+    }
+
+    function saveLog() {
+      const recipeName = recipes[currentMethodKey].name;
+      const recipeMemo = recipes[currentMethodKey].memo || ''; // レシピのメモを取得
+      const beans = document.getElementById('beans').value;
+      const notes = document.getElementById('log-notes').value;
+      const dateStr = new Date().toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      // ログデータに抽出時の「レシピメモ」も追加保存
+      brewLogs.unshift({
+        id: Date.now(),
+        date: dateStr,
+        recipe: recipeName,
+        recipeMemo: recipeMemo, // ★追加
+        beans: beans,
+        rating: currentRating,
+        notes: notes
+      });
+
+      localStorage.setItem('coffeeLogsV2', JSON.stringify(brewLogs));
+      closeOverlays();
+    }
+
+    function openHistory() {
+      closeOverlays();
+      const container = document.getElementById('history-list-container');
+      container.innerHTML = '';
+
+      if (brewLogs.length === 0) {
+        container.innerHTML = '<p style="text-align:center; opacity:0.5; margin-top:50px;">まだ履歴がありません。</p>';
+      } else {
+        brewLogs.forEach(log => {
+          const stars = '★'.repeat(log.rating) + '☆'.repeat(5 - log.rating);
+
+          // レシピメモと感想メモの表示部（入力がある場合のみ表示）
+          const recipeMemoHtml = log.recipeMemo ? `<div class="log-recipe-memo">Setup: ${log.recipeMemo}</div>` : '';
+          const notesHtml = log.notes ? `<div class="log-memo">${log.notes}</div>` : '';
+
+          container.innerHTML += `
+            <div class="log-item">
+              <div class="log-header">
+                <span>${log.date}</span>
+                <span style="color:var(--primary)">${stars}</span>
+              </div>
+              <div class="log-title">${log.recipe} <span style="opacity:0.6; font-size:12px;">(${log.beans}g)</span></div>
+              ${recipeMemoHtml}
+              ${notesHtml}
+            </div>
+          `;
+        });
+      }
+      document.getElementById('history-overlay').style.display = 'block';
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
